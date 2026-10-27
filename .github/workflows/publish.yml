@@ -79,7 +79,7 @@ jobs:
 
     steps:
       # Check out master (not the detached tag) so we can commit the bump back.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: master
 
