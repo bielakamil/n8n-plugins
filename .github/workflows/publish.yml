@@ -36,6 +36,9 @@
 #        Environment:      (leave blank unless you use GitHub Environments)
 #   4. Leave the NPM_TOKEN secret unset. GitHub's OIDC token is used instead.
 #
+# Trusted Publishers can only be added to a package that already exists on npm,
+# so the very first release must go through Option B. Switch to Option A after.
+#
 # Option B — npm Automation Token (fallback):
 #   1. On npmjs.com: Access Tokens → Generate New Token → Granular Access Token,
 #      scoped to this package with "Read and write" publish permission.
