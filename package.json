@@ -1,7 +1,7 @@
 {
 	"name": "n8n-nodes-open-project-api",
 	"version": "0.1.11",
-	"description": "n8n community node to interact with the OpenProject API",
+	"description": "n8n community nodes for the OpenProject, Kaneo and Woodpecker CI APIs",
 	"license": "MIT",
 	"homepage": "https://github.com/biela-kamil/n8n-open-project",
 	"keywords": [
@@ -48,12 +48,12 @@
 		]
 	},
 	"devDependencies": {
-		"@n8n/node-cli": "^0.51.4",
+		"@n8n/node-cli": "^0.54.3",
 		"eslint": "^9.39.5",
-		"prettier": "^3.9.9",
+		"prettier": "^3.9.10",
 		"release-it": "^21.1.1",
 		"typescript": "^6.0.3",
-		"vitest": "^5.0.3"
+		"vitest": "^5.0.5"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
