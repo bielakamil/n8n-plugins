@@ -3,7 +3,7 @@
 	"version": "0.1.11",
 	"description": "n8n community nodes for the OpenProject, Kaneo and Woodpecker CI APIs",
 	"license": "MIT",
-	"homepage": "https://github.com/biela-kamil/n8n-open-project",
+	"homepage": "https://github.com/bielakamil/n8n-plugins",
 	"keywords": [
 		"n8n-community-node-package",
 		"open-project",
@@ -15,7 +15,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/biela-kamil/n8n-open-project"
+		"url": "https://github.com/bielakamil/n8n-plugins"
 	},
 	"scripts": {
 		"build": "n8n-node build",

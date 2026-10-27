@@ -30,8 +30,8 @@
 #   1. Log in to npmjs.com and open your package's settings.
 #   2. Under "Publish access" → "Trusted Publishers", click "Add a publisher".
 #   3. Select GitHub Actions and fill in:
-#        Repository owner: biela-kamil
-#        Repository name:  n8n-open-project
+#        Repository owner: bielakamil
+#        Repository name:  n8n-plugins
 #        Workflow name:    publish.yml
 #        Environment:      (leave blank unless you use GitHub Environments)
 #   4. Leave the NPM_TOKEN secret unset. GitHub's OIDC token is used instead.
