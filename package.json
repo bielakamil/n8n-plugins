@@ -1,6 +1,6 @@
 {
 	"name": "@bielakamil/n8n-nodes-plugins",
-	"version": "0.1.11",
+	"version": "0.1.12",
 	"description": "n8n community nodes for the OpenProject, Kaneo and Woodpecker CI APIs",
 	"license": "MIT",
 	"homepage": "https://github.com/bielakamil/n8n-plugins",
