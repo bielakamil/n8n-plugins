@@ -1,9 +1,16 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import { kaneoRequest } from '../../utils/request';
-import { KaneoTask, KaneoTaskBoard, KaneoTaskBoardResponse } from '../../utils/types';
+import { KaneoColumn, KaneoTask, KaneoTaskBoard, KaneoTaskBoardResponse } from '../../utils/types';
 
 /** Maximum page size accepted by the Kaneo API */
 const MAX_PAGE_SIZE = 100;
+
+/** Allowed values of enum query params, as defined by the Kaneo API */
+const ENUM_FILTERS: Record<string, readonly string[]> = {
+	sortBy: ['createdAt', 'priority', 'dueDate', 'position', 'title', 'number'],
+	sortOrder: ['asc', 'desc'],
+};
 
 type TaskBucket = 'board' | 'archived' | 'planned';
 
@@ -37,15 +44,38 @@ export async function getTasks(
 		extractValue: true,
 	}) as string;
 	const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
-	const limit = returnAll
-		? Infinity
-		: (this.getNodeParameter('limit', itemIndex, 50) as number);
+	const limit = returnAll ? Infinity : (this.getNodeParameter('limit', itemIndex, 50) as number);
 	const filters = this.getNodeParameter('filters', itemIndex, {}) as IDataObject;
 
 	// Drop empty strings so we don't send `status=` etc. to the API
 	const qs = Object.fromEntries(
 		Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
 	);
+
+	// Values set via expressions bypass the options list, so check them before calling the API
+	for (const [name, allowed] of Object.entries(ENUM_FILTERS)) {
+		if (name in qs && !allowed.includes(qs[name] as string)) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Invalid value for "${name}": ${String(qs[name])}. Allowed values: ${allowed.join(', ')}`,
+				{ itemIndex },
+			);
+		}
+	}
+
+	// An unknown status slug makes the API return an empty board instead of an error, which
+	// misleads AI tools (they only see a free-form string), so check it against the project's columns
+	if (qs.status !== undefined) {
+		const columns = (await kaneoRequest.call(this, 'GET', `column/${projectId}`)) as KaneoColumn[];
+		const slugs = columns.map((column) => column.slug);
+		if (!slugs.includes(qs.status as string)) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Invalid status: ${String(qs.status)}. Valid statuses for this project: ${slugs.join(', ')}`,
+				{ itemIndex },
+			);
+		}
+	}
 
 	const results: INodeExecutionData[] = [];
 	// Guards against duplicates if the API repeats archived/planned tasks on every page

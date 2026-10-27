@@ -171,7 +171,8 @@ export const tasksDescription: INodeProperties[] = [
 				type: 'string',
 				default: 'to-do',
 				placeholder: 'e.g. to-do',
-				description: 'Slug of the column to place the task in',
+				description:
+					'Slug of the column to place the task in, e.g. to-do, in-progress, in-review or done (default columns). Custom columns have their own slugs.',
 			},
 		],
 	},
@@ -229,8 +230,9 @@ export const tasksDescription: INodeProperties[] = [
 				name: 'status',
 				type: 'string',
 				default: '',
-				placeholder: 'e.g. in-progress',
-				description: 'Slug of the column to move the task to',
+				placeholder: 'e.g. to-do',
+				description:
+					'Slug of the column to move the task to, e.g. to-do, in-progress, in-review or done (default columns). Custom columns have their own slugs.',
 			},
 			{
 				displayName: 'Title',
@@ -315,8 +317,9 @@ export const tasksDescription: INodeProperties[] = [
 				name: 'status',
 				type: 'string',
 				default: '',
-				placeholder: 'e.g. in-progress',
-				description: 'Only return tasks with this status (column slug)',
+				placeholder: 'e.g. to-do',
+				description:
+					'Only return tasks in this column. Use its slug, e.g. to-do, in-progress, in-review or done (default columns), not its display name. An unknown slug fails with the list of valid ones.',
 			},
 		],
 	},

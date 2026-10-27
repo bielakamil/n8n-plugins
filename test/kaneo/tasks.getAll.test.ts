@@ -18,25 +18,31 @@ function setup(
 	pages: Array<{ ids: string[] } & Record<string, unknown>>,
 ) {
 	const calls: Array<Record<string, unknown>> = [];
-	const httpRequestWithAuthentication = vi.fn(async (_cred: string, options: IHttpRequestOptions) => {
-		// Behave like the real API: reject requests that violate the OpenAPI spec with 400
-		const errors = validateRequest(options.method, options.url, options.qs);
-		if (errors.length) throw new Error(`400 Bad Request: ${errors.join('; ')}`);
-		calls.push(options.qs);
-		const page = pages[options.qs.page - 1];
-		return {
-			data: board(page.ids, page),
-			pagination: {
-				total: 0,
-				page: options.qs.page,
-				pageSize: options.qs.limit,
-				totalPages: pages.length,
-			},
-		};
-	});
+	const httpRequestWithAuthentication = vi.fn(
+		async (_cred: string, options: IHttpRequestOptions) => {
+			// Behave like the real API: reject requests that violate the OpenAPI spec with 400
+			const errors = validateRequest(options.method, options.url, options.qs);
+			if (errors.length) throw new Error(`400 Bad Request: ${errors.join('; ')}`);
+			if (options.url.endsWith('/column/p1')) {
+				return ['to-do', 'in-progress', 'done'].map((slug) => ({ slug }));
+			}
+			calls.push(options.qs);
+			const page = pages[options.qs.page - 1];
+			return {
+				data: board(page.ids, page),
+				pagination: {
+					total: 0,
+					page: options.qs.page,
+					pageSize: options.qs.limit,
+					totalPages: pages.length,
+				},
+			};
+		},
+	);
 	const ctx = {
 		getNodeParameter: (name: string, _i: number, fallback: unknown) =>
 			name in params ? params[name] : fallback,
+		getNode: () => ({ name: 'Kaneo' }),
 		getCredentials: async () => ({ url: 'https://kaneo.test/' }),
 		helpers: { httpRequestWithAuthentication },
 	} as unknown as IExecuteFunctions;
@@ -119,6 +125,38 @@ describe('Kaneo tasks getAll', () => {
 		await getTasks.call(ctx, 0);
 		expect(calls[0]).toMatchObject({ priority: 'high', sortBy: 'title' });
 		expect(calls[0]).not.toHaveProperty('status');
+	});
+
+	it.each([
+		['sortBy', 'name'],
+		['sortOrder', 'up'],
+	])('rejects %s value outside the API enum without calling the API', async (name, value) => {
+		const { ctx, httpRequestWithAuthentication } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 1, filters: { [name]: value } },
+			[{ ids: ['a'] }],
+		);
+		await expect(getTasks.call(ctx, 0)).rejects.toThrow(`Invalid value for "${name}"`);
+		expect(httpRequestWithAuthentication).not.toHaveBeenCalled();
+	});
+
+	it('accepts a status that matches a project column', async () => {
+		const { ctx, calls } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 1, filters: { status: 'in-progress' } },
+			[{ ids: ['a'] }],
+		);
+		await getTasks.call(ctx, 0);
+		expect(calls[0]).toMatchObject({ status: 'in-progress' });
+	});
+
+	it('rejects an unknown status and lists the valid ones', async () => {
+		const { ctx, calls } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 1, filters: { status: 'In Progress' } },
+			[{ ids: ['a'] }],
+		);
+		await expect(getTasks.call(ctx, 0)).rejects.toThrow(
+			'Invalid status: In Progress. Valid statuses for this project: to-do, in-progress, done',
+		);
+		expect(calls).toHaveLength(0);
 	});
 
 	it('calls the correct URL', async () => {
