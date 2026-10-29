@@ -10,7 +10,7 @@ describe('htmlToText', () => {
 
 	it('decodes named and numeric entities', () => {
 		expect(htmlToText('https://x.test/?a=1&amp;b=2 &lt;tag&gt; &#39;q&#x27; &nbsp;ok')).toBe(
-			"https://x.test/?a=1&b=2 <tag> 'q'  ok".replace(' ', ' '),
+			"https://x.test/?a=1&b=2 <tag> 'q'  ok",
 		);
 	});
 
