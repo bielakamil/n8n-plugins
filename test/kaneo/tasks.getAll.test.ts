@@ -156,6 +156,52 @@ describe('Kaneo tasks getAll', () => {
 		});
 	});
 
+	it('searches titles case-insensitively across pages and keeps search out of the query', async () => {
+		const { ctx, calls } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 2, filters: { search: 'T1' } },
+			[{ ids: ids(1, 100) }, { ids: ids(101, 200) }],
+		);
+		const result = await getTasks.call(ctx, 0);
+		expect(result.map((r) => r.json.id)).toEqual(['t1', 't10']);
+		expect(calls[0]).toMatchObject({ limit: 100 });
+		expect(calls[0]).not.toHaveProperty('search');
+	});
+
+	it.each(['47', '#47', 47])('finds a task by number %s', async (number) => {
+		const { ctx, httpRequestWithAuthentication } = setup(
+			{ projectId: 'p1', returnAll: true, filters: { number } },
+			[],
+		);
+		vi.mocked(httpRequestWithAuthentication).mockResolvedValueOnce({
+			data: {
+				columns: [
+					{
+						name: 'To Do',
+						tasks: [
+							{ id: 'a', number: 46, title: 'A' },
+							{ id: 'b', number: 47, title: 'B' },
+						],
+					},
+				],
+				archivedTasks: [],
+				plannedTasks: [],
+			},
+			pagination: { totalPages: 1 },
+		});
+		const result = await getTasks.call(ctx, 0);
+		expect(result.map((r) => r.json.id)).toEqual(['b']);
+		expect(httpRequestWithAuthentication.mock.calls[0][1].qs).not.toHaveProperty('number');
+	});
+
+	it('rejects an invalid task number without calling the API', async () => {
+		const { ctx, httpRequestWithAuthentication } = setup(
+			{ projectId: 'p1', returnAll: true, filters: { number: 'abc' } },
+			[{ ids: ['a'] }],
+		);
+		await expect(getTasks.call(ctx, 0)).rejects.toThrow('Invalid task number: abc');
+		expect(httpRequestWithAuthentication).not.toHaveBeenCalled();
+	});
+
 	it('forwards filters but drops empty ones', async () => {
 		const { ctx, calls } = setup(
 			{

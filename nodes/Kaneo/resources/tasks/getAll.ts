@@ -13,7 +13,40 @@ const ENUM_FILTERS: Record<string, readonly string[]> = {
 	sortOrder: ['asc', 'desc'],
 };
 
+/** Filters the Kaneo API doesn't support, applied to the fetched tasks instead of sent as query params */
+const CLIENT_FILTERS = ['number', 'search'];
+
 type TaskBucket = 'board' | 'archived' | 'planned';
+
+/** Builds a matcher for the client-side filters, or undefined when none is set */
+function buildMatcher(
+	this: IExecuteFunctions,
+	filters: IDataObject,
+	itemIndex: number,
+): ((task: IDataObject) => boolean) | undefined {
+	let number: number | undefined;
+	if (filters.number !== undefined) {
+		// Accept "#47" too, as that's how task numbers are shown in Kaneo
+		number = Number(String(filters.number).trim().replace(/^#/, ''));
+		if (!Number.isInteger(number) || number < 1) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Invalid task number: ${String(filters.number)}. Use a positive integer, e.g. 47`,
+				{ itemIndex },
+			);
+		}
+	}
+	const search =
+		filters.search !== undefined ? String(filters.search).trim().toLowerCase() : undefined;
+
+	if (number === undefined && !search) return undefined;
+	return (task) =>
+		(number === undefined || task.number === number) &&
+		(!search ||
+			String(task.title ?? '')
+				.toLowerCase()
+				.includes(search));
+}
 
 /**
  * Keeps only the fields an AI agent needs to pick a task, without nulls, and turns the
@@ -81,9 +114,13 @@ export async function getTasks(
 	const filters = this.getNodeParameter('filters', itemIndex, {}) as IDataObject;
 
 	// Drop empty strings so we don't send `status=` etc. to the API
-	const qs = Object.fromEntries(
+	const setFilters = Object.fromEntries(
 		Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
 	);
+	const qs = Object.fromEntries(
+		Object.entries(setFilters).filter(([name]) => !CLIENT_FILTERS.includes(name)),
+	);
+	const matches = buildMatcher.call(this, setFilters, itemIndex);
 
 	// Values set via expressions bypass the options list, so check them before calling the API
 	for (const [name, allowed] of Object.entries(ENUM_FILTERS)) {
@@ -120,13 +157,15 @@ export async function getTasks(
 		const response = (await kaneoRequest.call(this, 'GET', `task/tasks/${projectId}`, {
 			...qs,
 			page,
-			limit: Math.min(limit - results.length, MAX_PAGE_SIZE),
+			// With client-side filters we can't tell how many tasks we need, so fetch full pages
+			limit: matches ? MAX_PAGE_SIZE : Math.min(limit - results.length, MAX_PAGE_SIZE),
 		})) as KaneoTaskBoardResponse;
 
 		for (const item of flattenBoard(response.data, itemIndex, simplify)) {
 			const id = item.json.id as string;
 			if (seen.has(id)) continue;
 			seen.add(id);
+			if (matches && !matches(item.json)) continue;
 			results.push(item);
 		}
 		totalPages = response.pagination.totalPages;

@@ -282,12 +282,29 @@ export const tasksDescription: INodeProperties[] = [
 				description: 'Only return tasks assigned to this user',
 			},
 			{
+				displayName: 'Number',
+				name: 'number',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. 47',
+				description:
+					'Only return the task with this number, as shown in Kaneo (e.g. 47 or #47). Use it to look up the task ID needed by other operations.',
+			},
+			{
 				displayName: 'Priority',
 				name: 'priority',
 				type: 'string',
 				default: '',
 				placeholder: 'e.g. high',
 				description: 'Only return tasks with this priority',
+			},
+			{
+				displayName: 'Search',
+				name: 'search',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. rewards',
+				description: 'Only return tasks whose title contains this text (case-insensitive)',
 			},
 			{
 				displayName: 'Sort By',
