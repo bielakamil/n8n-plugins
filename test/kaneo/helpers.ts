@@ -48,6 +48,7 @@ export function createContext(
 	const ctx = {
 		getNodeParameter: (name: string, _item: number, fallback?: unknown) =>
 			name in params ? params[name] : fallback,
+		getNode: () => ({ name: 'Kaneo' }),
 		getCredentials: async () => CREDENTIALS,
 		helpers: { httpRequestWithAuthentication },
 	} as unknown as IExecuteFunctions;

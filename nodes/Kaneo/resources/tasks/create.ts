@@ -1,6 +1,7 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { kaneoRequest } from '../../utils/request';
 import { KaneoTask } from '../../utils/types';
+import { parsePriority } from './priority';
 
 export async function createTask(
 	this: IExecuteFunctions,
@@ -21,7 +22,7 @@ export async function createTask(
 		title,
 		description: description ?? '',
 		status: status || 'to-do',
-		priority: priority ?? 'no-priority',
+		priority: priority ? parsePriority.call(this, priority, itemIndex) : 'no-priority',
 		...Object.fromEntries(Object.entries(optional).filter(([, value]) => value !== '')),
 	};
 

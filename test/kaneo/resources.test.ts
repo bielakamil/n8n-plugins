@@ -309,7 +309,34 @@ describe('tasks', () => {
 					'POST task/p1': task,
 				},
 			),
-		).rejects.toThrow(/priority/);
+		).rejects.toThrow('Invalid priority: asap. Allowed values: no-priority, low, medium, high, urgent');
+	});
+
+	it('create normalizes the priority string', async () => {
+		const { requests } = await run(
+			'task.create',
+			{ projectId: 'p1', title: 'T', additionalFields: { priority: ' High ' } },
+			{ 'POST task/p1': task },
+		);
+		expect(requests[0].body).toMatchObject({ priority: 'high' });
+	});
+
+	it('update validates the priority before calling the API', async () => {
+		const { ctx, requests } = createContext(
+			{ taskId: 't1', updateFields: { priority: 'asap' } },
+			{ 'GET task/t1': task, 'PUT task/t1': task },
+		);
+		await expect(operations['task.update'].call(ctx, 0)).rejects.toThrow(/Invalid priority/);
+		expect(requests).toHaveLength(0);
+	});
+
+	it('update sets a new priority', async () => {
+		const { requests } = await run(
+			'task.update',
+			{ taskId: 't1', updateFields: { priority: 'urgent' } },
+			{ 'GET task/t1': task, 'PUT task/t1': task },
+		);
+		expect(requests[1].body).toMatchObject({ priority: 'urgent' });
 	});
 
 	it('get / delete', async () => {

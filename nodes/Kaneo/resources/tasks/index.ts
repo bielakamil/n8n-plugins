@@ -149,15 +149,10 @@ export const tasksDescription: INodeProperties[] = [
 			{
 				displayName: 'Priority',
 				name: 'priority',
-				type: 'options',
+				type: 'string',
 				default: 'no-priority',
-				options: [
-					{ name: 'High', value: 'high' },
-					{ name: 'Low', value: 'low' },
-					{ name: 'Medium', value: 'medium' },
-					{ name: 'No Priority', value: 'no-priority' },
-					{ name: 'Urgent', value: 'urgent' },
-				],
+				placeholder: 'e.g. high',
+				description: 'One of: no-priority, low, medium, high, urgent',
 			},
 			{
 				displayName: 'Start Date',
@@ -209,15 +204,10 @@ export const tasksDescription: INodeProperties[] = [
 			{
 				displayName: 'Priority',
 				name: 'priority',
-				type: 'options',
-				default: 'no-priority',
-				options: [
-					{ name: 'High', value: 'high' },
-					{ name: 'Low', value: 'low' },
-					{ name: 'Medium', value: 'medium' },
-					{ name: 'No Priority', value: 'no-priority' },
-					{ name: 'Urgent', value: 'urgent' },
-				],
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. high',
+				description: 'One of: no-priority, low, medium, high, urgent',
 			},
 			{
 				displayName: 'Start Date',
