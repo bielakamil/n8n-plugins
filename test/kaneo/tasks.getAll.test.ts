@@ -112,6 +112,50 @@ describe('Kaneo tasks getAll', () => {
 		]);
 	});
 
+	it('simplifies tasks to the essential fields when requested', async () => {
+		const { ctx } = setup({ projectId: 'p1', returnAll: true, simplify: true }, [
+			{ ids: ['a'], archived: ['x'] },
+		]);
+		const result = await getTasks.call(ctx, 0);
+		expect(result.map((r) => r.json)).toEqual([
+			{ id: 'a', title: 'a', bucket: 'board' },
+			{ id: 'x', title: 'x', bucket: 'archived' },
+		]);
+	});
+
+	it('returns the description as plain text when simplified', async () => {
+		const { ctx } = setup({ projectId: 'p1', returnAll: true, simplify: true }, [{ ids: ['a'] }]);
+		const raw = {
+			id: 'a',
+			number: 57,
+			title: 'Fix',
+			status: 'to-do',
+			priority: 'high',
+			description: '<p>See <a href="u">https://x.test/?a=1&amp;b=2</a></p>',
+			userId: null,
+			assigneeId: null,
+			assigneeName: null,
+			startDate: null,
+			dueDate: null,
+			labels: [],
+			externalLinks: [],
+		};
+		vi.mocked(ctx.helpers.httpRequestWithAuthentication).mockResolvedValueOnce({
+			data: { columns: [{ name: 'To Do', tasks: [raw] }], archivedTasks: [], plannedTasks: [] },
+			pagination: { totalPages: 1 },
+		});
+		const result = await getTasks.call(ctx, 0);
+		expect(result[0].json).toEqual({
+			id: 'a',
+			number: 57,
+			title: 'Fix',
+			status: 'to-do',
+			priority: 'high',
+			description: 'See https://x.test/?a=1&b=2',
+			bucket: 'board',
+		});
+	});
+
 	it('forwards filters but drops empty ones', async () => {
 		const { ctx, calls } = setup(
 			{

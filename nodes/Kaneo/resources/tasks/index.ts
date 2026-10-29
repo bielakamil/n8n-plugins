@@ -254,6 +254,17 @@ export const tasksDescription: INodeProperties[] = [
 		},
 	},
 	{
+		displayName: 'Simplify',
+		name: 'simplify',
+		type: 'boolean',
+		default: false,
+		description:
+			'Whether to return a simplified version of the response instead of the raw data: only ID, number, title, status, priority, description (as plain text), assignee name, due date, creation date and bucket, without empty fields. Recommended when used as an AI tool.',
+		displayOptions: {
+			show: { ...showOnlyForTasks, operation: ['getAll'] },
+		},
+	},
+	{
 		displayName: 'Filters',
 		name: 'filters',
 		type: 'collection',

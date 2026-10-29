@@ -1,5 +1,6 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import { htmlToText } from '../../utils/html';
 import { kaneoRequest } from '../../utils/request';
 import { KaneoColumn, KaneoTask, KaneoTaskBoard, KaneoTaskBoardResponse } from '../../utils/types';
 
@@ -14,25 +15,56 @@ const ENUM_FILTERS: Record<string, readonly string[]> = {
 
 type TaskBucket = 'board' | 'archived' | 'planned';
 
+/**
+ * Keeps only the fields an AI agent needs to pick a task, without nulls, and turns the
+ * description into plain text, which shrinks the response to a fraction of its raw size
+ */
+function simplifyTask(task: KaneoTask, bucket: TaskBucket): IDataObject {
+	const simplified: IDataObject = {
+		id: task.id,
+		number: task.number,
+		title: task.title,
+		status: task.status,
+		priority: task.priority,
+		description: task.description ? htmlToText(task.description) : null,
+		assigneeName: task.assigneeName,
+		dueDate: task.dueDate,
+		createdAt: task.createdAt,
+		bucket,
+	};
+	return Object.fromEntries(
+		Object.entries(simplified).filter(
+			([, value]) => value !== null && value !== undefined && value !== '',
+		),
+	);
+}
+
 function toItem(
 	task: KaneoTask,
 	bucket: TaskBucket,
 	column: string | null,
 	itemIndex: number,
+	simplify: boolean,
 ): INodeExecutionData {
 	return {
-		json: { ...(task as unknown as IDataObject), column, bucket },
+		json: simplify
+			? simplifyTask(task, bucket)
+			: { ...(task as unknown as IDataObject), column, bucket },
 		pairedItem: { item: itemIndex },
 	};
 }
 
-function flattenBoard(board: KaneoTaskBoard, itemIndex: number): INodeExecutionData[] {
+function flattenBoard(
+	board: KaneoTaskBoard,
+	itemIndex: number,
+	simplify: boolean,
+): INodeExecutionData[] {
 	return [
 		...board.columns.flatMap((col) =>
-			col.tasks.map((task) => toItem(task, 'board', col.name, itemIndex)),
+			col.tasks.map((task) => toItem(task, 'board', col.name, itemIndex, simplify)),
 		),
-		...board.archivedTasks.map((task) => toItem(task, 'archived', null, itemIndex)),
-		...board.plannedTasks.map((task) => toItem(task, 'planned', null, itemIndex)),
+		...board.archivedTasks.map((task) => toItem(task, 'archived', null, itemIndex, simplify)),
+		...board.plannedTasks.map((task) => toItem(task, 'planned', null, itemIndex, simplify)),
 	];
 }
 
@@ -45,6 +77,7 @@ export async function getTasks(
 	}) as string;
 	const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
 	const limit = returnAll ? Infinity : (this.getNodeParameter('limit', itemIndex, 50) as number);
+	const simplify = this.getNodeParameter('simplify', itemIndex, false) as boolean;
 	const filters = this.getNodeParameter('filters', itemIndex, {}) as IDataObject;
 
 	// Drop empty strings so we don't send `status=` etc. to the API
@@ -90,7 +123,7 @@ export async function getTasks(
 			limit: Math.min(limit - results.length, MAX_PAGE_SIZE),
 		})) as KaneoTaskBoardResponse;
 
-		for (const item of flattenBoard(response.data, itemIndex)) {
+		for (const item of flattenBoard(response.data, itemIndex, simplify)) {
 			const id = item.json.id as string;
 			if (seen.has(id)) continue;
 			seen.add(id);
