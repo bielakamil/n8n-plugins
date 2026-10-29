@@ -229,6 +229,26 @@ describe('Kaneo tasks getAll', () => {
 		expect(httpRequestWithAuthentication).not.toHaveBeenCalled();
 	});
 
+	it('normalizes the priority filter', async () => {
+		const { ctx, calls } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 1, filters: { priority: ' High ' } },
+			[{ ids: ['a'] }],
+		);
+		await getTasks.call(ctx, 0);
+		expect(calls[0]).toMatchObject({ priority: 'high' });
+	});
+
+	it('rejects an unknown priority without calling the API', async () => {
+		const { ctx, httpRequestWithAuthentication } = setup(
+			{ projectId: 'p1', returnAll: false, limit: 1, filters: { priority: 'critical' } },
+			[{ ids: ['a'] }],
+		);
+		await expect(getTasks.call(ctx, 0)).rejects.toThrow(
+			'Invalid priority: critical. Allowed values: no-priority, low, medium, high, urgent',
+		);
+		expect(httpRequestWithAuthentication).not.toHaveBeenCalled();
+	});
+
 	it('accepts a status that matches a project column', async () => {
 		const { ctx, calls } = setup(
 			{ projectId: 'p1', returnAll: false, limit: 1, filters: { status: 'in-progress' } },

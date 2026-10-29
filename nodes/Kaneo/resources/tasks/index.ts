@@ -296,7 +296,8 @@ export const tasksDescription: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				placeholder: 'e.g. high',
-				description: 'Only return tasks with this priority',
+				description:
+					'Only return tasks with this priority. One of: no-priority, low, medium, high, urgent.',
 			},
 			{
 				displayName: 'Search',

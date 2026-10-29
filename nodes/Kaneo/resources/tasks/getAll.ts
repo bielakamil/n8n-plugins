@@ -2,6 +2,7 @@ import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-wor
 import { NodeOperationError } from 'n8n-workflow';
 import { htmlToText } from '../../utils/html';
 import { kaneoRequest } from '../../utils/request';
+import { parsePriority } from './priority';
 import { KaneoColumn, KaneoTask, KaneoTaskBoard, KaneoTaskBoardResponse } from '../../utils/types';
 
 /** Maximum page size accepted by the Kaneo API */
@@ -131,6 +132,11 @@ export async function getTasks(
 				{ itemIndex },
 			);
 		}
+	}
+
+	// Like an unknown status, an unknown priority would silently return no tasks
+	if (qs.priority !== undefined) {
+		qs.priority = parsePriority.call(this, qs.priority, itemIndex);
 	}
 
 	// An unknown status slug makes the API return an empty board instead of an error, which
