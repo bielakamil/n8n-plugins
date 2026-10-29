@@ -309,7 +309,7 @@ export const tasksDescription: INodeProperties[] = [
 				default: '',
 				placeholder: 'e.g. to-do',
 				description:
-					'Only return tasks in this column. Use its slug, e.g. to-do, in-progress, in-review or done (default columns), not its display name. An unknown slug fails with the list of valid ones.',
+					'Only return tasks in this column. Use its slug, e.g. to-do, in-progress, in-review or done (default columns), not its display name. Leave empty to return tasks from all columns. An unknown slug fails with the list of valid ones.',
 			},
 		],
 	},
